@@ -29,3 +29,30 @@ Privacy information can be found at https://privacy.microsoft.com/en-us/
 
 Microsoft and any contributors reserve all other rights, whether under their respective copyrights, patents,
 or trademarks, whether by implication, estoppel or otherwise.
+
+
+```bash
+
+githubOrganizationName='bpelikan'
+githubRepositoryName='mslearn-automate-azure-infrastructure-change-reviews-using-bicep-github'
+
+applicationRegistrationDetails=$(az ad app create --display-name 'mslearn-toy-website-auto-review')
+applicationRegistrationObjectId=$(echo $applicationRegistrationDetails | jq -r '.id')
+applicationRegistrationAppId=$(echo $applicationRegistrationDetails | jq -r '.appId')
+
+az ad app federated-credential create \
+   --id $applicationRegistrationObjectId \
+   --parameters "{\"name\":\"mslearn-toy-website-auto-review\",\"issuer\":\"https://token.actions.githubusercontent.com\",\"subject\":\"repo:${githubOrganizationName}/${githubRepositoryName}:pull_request\",\"audiences\":[\"api://AzureADTokenExchange\"]}"
+
+az ad sp create --id $applicationRegistrationObjectId
+az role assignment create \
+   --assignee $applicationRegistrationAppId \
+   --role Contributor
+
+echo "AZURE_CLIENT_ID: $applicationRegistrationAppId"
+echo "AZURE_TENANT_ID: $(az account show --query tenantId --output tsv)"
+echo "AZURE_SUBSCRIPTION_ID: $(az account show --query id --output tsv)"
+
+
+
+```
